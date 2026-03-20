@@ -1,0 +1,7 @@
+{
+  "name": "Preventivo Facile AI_21_a_perfetto_vocale_multilinque",
+  "description": "Generatore intelligente di preventivi per lavori edili e manutenzioni. Inserisci la provincia e una descrizione, l\u0027AI stima misure e costi.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
