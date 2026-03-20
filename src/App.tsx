@@ -488,13 +488,22 @@ export default function App() {
   const lastProcessedResultIndex = useRef(0);
   const lastTranscriptRef = useRef("");
 
+  const getDictationLangTag = (lang: string) => {
+    switch(lang) {
+      case 'it': return 'it-IT';
+      case 'ro': return 'ro-RO';
+      case 'ar': return 'ar-SA';
+      case 'sq': return 'sq-AL';
+      default: return 'it-IT';
+    }
+  };
+
   useEffect(() => {
     activeFieldRef.current = activeDictationField;
     if (!activeDictationField) {
       lastTranscriptRef.current = "";
     }
   }, [activeDictationField]);
-  const [dictationLanguage, setDictationLanguage] = useState('ar-SA');
 
   const [companyData, setCompanyData] = useState<CompanyData>({
     name: '',
@@ -707,7 +716,7 @@ export default function App() {
         setTimeout(() => {
           setActiveDictationField(fieldId);
           try {
-            recognitionRef.current.lang = dictationLanguage;
+            recognitionRef.current.lang = getDictationLangTag(currentLang);
             recognitionRef.current?.start();
           } catch (e) {
             console.error(e);
@@ -716,7 +725,7 @@ export default function App() {
       } else {
         setActiveDictationField(fieldId);
         try {
-          recognitionRef.current.lang = dictationLanguage;
+          recognitionRef.current.lang = getDictationLangTag(currentLang);
           recognitionRef.current.start();
         } catch (e) {
           console.error(e);
@@ -1367,10 +1376,6 @@ export default function App() {
               onChange={(e) => {
                 const lang = e.target.value as 'it' | 'ro' | 'ar' | 'sq';
                 setCurrentLang(lang);
-                if (lang === 'it') setDictationLanguage('it-IT');
-                else if (lang === 'ro') setDictationLanguage('ro-RO');
-                else if (lang === 'ar') setDictationLanguage('ar-SA');
-                else if (lang === 'sq') setDictationLanguage('sq-AL');
               }}
               className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none"
             >
