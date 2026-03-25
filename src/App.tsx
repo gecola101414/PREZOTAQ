@@ -688,11 +688,16 @@ export default function App() {
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error("Speech recognition error", event.error);
+        console.error("Speech recognition error:", event.error, "Event:", event);
         setActiveDictationField(null);
       };
 
+      recognitionRef.current.onstart = () => {
+        console.log("Speech recognition started");
+      };
+
       recognitionRef.current.onend = () => {
+        console.log("Speech recognition ended");
         transcriptBufferRef.current = "";
         // Only set to null if we aren't starting a new field
         setActiveDictationField(current => {
