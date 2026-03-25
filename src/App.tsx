@@ -485,7 +485,6 @@ export default function App() {
   const [activeDictationField, setActiveDictationField] = useState<string | null>(null);
   const activeFieldRef = useRef<string | null>(null);
   const recognitionRef = useRef<any>(null);
-  const lastProcessedResultIndex = useRef(0);
   const lastTranscriptRef = useRef("");
   const transcriptBufferRef = useRef("");
 
@@ -637,11 +636,14 @@ export default function App() {
         if (silenceTimer) clearTimeout(silenceTimer);
 
         // Append new results to buffer
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           const result = event.results[i];
-          if (result.isFinal && i >= lastProcessedResultIndex.current) {
-            lastProcessedResultIndex.current = i + 1;
-            transcriptBufferRef.current += result[0].transcript.trim() + " ";
+          if (result.isFinal) {
+            const transcript = result[0].transcript.trim();
+            // Simple check to avoid duplicates
+            if (!transcriptBufferRef.current.includes(transcript)) {
+              transcriptBufferRef.current += transcript + " ";
+            }
           }
         }
 
@@ -691,7 +693,6 @@ export default function App() {
       };
 
       recognitionRef.current.onend = () => {
-        lastProcessedResultIndex.current = 0;
         transcriptBufferRef.current = "";
         // Only set to null if we aren't starting a new field
         setActiveDictationField(current => {
