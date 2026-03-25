@@ -96,7 +96,7 @@ interface SavedQuote {
   };
 }
 
-async function generateQuote(description: string, siteAddress: string, lang: 'it' | 'ro' | 'ar', customPrompt?: string, priceHistory?: any[], files?: any[], parsedFilesText?: string) {
+async function generateQuote(description: string, siteAddress: string, lang: 'it' | 'ro' | 'ar' | 'sq', customPrompt?: string, priceHistory?: any[], files?: any[], parsedFilesText?: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Chiave API mancante. Verifica la configurazione nelle impostazioni.");
@@ -119,7 +119,7 @@ async function generateQuote(description: string, siteAddress: string, lang: 'it
       
       LINGUA:
       1. L'app è dedicata ad artigiani.
-      2. Genera i campi principali (jobTitle, specifications, items, notes, estimatedDimensionsExplanation) SEMPRE E RIGOROSAMENTE NELLA LINGUA SELEZIONATA: ${lang === 'it' ? 'Italiano' : lang === 'ro' ? 'Rumeno' : 'Arabo (SCRITTURA DA DESTRA A SINISTRA)'}.
+      2. Genera i campi principali (jobTitle, specifications, items, notes, estimatedDimensionsExplanation) SEMPRE E RIGOROSAMENTE NELLA LINGUA SELEZIONATA: ${lang === 'it' ? 'Italiano' : lang === 'ro' ? 'Rumeno' : lang === 'ar' ? 'Arabo (SCRITTURA DA DESTRA A SINISTRA)' : 'Albanese'}.
       3. Genera i campi all'interno di "pdfData" SEMPRE E RIGOROSAMENTE IN LINGUA ITALIANA.
 
       ${description ? `Basati su questa descrizione fornita: "${description}".` : "Basati sui dati estratti dai file allegati."}
@@ -624,21 +624,44 @@ export default function App() {
     if (SpeechRecognition && !recognitionRef.current) {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = false;
-      
+      recognitionRef.current.interimResults = true;
+
+      let silenceTimer: any = null;
+      let transcriptBuffer = "";
+
       recognitionRef.current.onresult = (event: any) => {
         const currentField = activeFieldRef.current;
         if (!currentField) return;
 
+        // Clear existing timer
+        if (silenceTimer) clearTimeout(silenceTimer);
+
+        // Append new results to buffer
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const result = event.results[i];
-          if (result.isFinal && i >= lastProcessedResultIndex.current) {
-            lastProcessedResultIndex.current = i + 1;
-            const transcript = result[0].transcript.trim();
-            if (!transcript || transcript === lastTranscriptRef.current) continue;
+          if (result.isFinal) {
+            transcriptBuffer += result[0].transcript.trim() + " ";
+          }
+        }
+
+        // Set timer for 5 seconds
+        silenceTimer = setTimeout(() => {
+          if (transcriptBuffer.trim()) {
+            const transcript = transcriptBuffer.trim();
+            transcriptBuffer = "";
             
-            lastTranscriptRef.current = transcript;
+            // Play beep
+            try {
+                const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                oscillator.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } catch (e) {
+                console.error("Beep error", e);
+            }
             
+            // Update state
             if (currentField === 'customPrompt') {
               setCustomPrompt(prev => {
                 const currentText = prev || '';
@@ -654,15 +677,11 @@ export default function App() {
                 const formatted = `- ${transcript};`;
                 const separator = currentText && !currentText.endsWith('\n') ? '\n' : '';
                 const newText = currentText + separator + formatted + '\n';
-
-                return {
-                  ...prev,
-                  [wbsName]: newText
-                };
+                return { ...prev, [wbsName]: newText };
               });
             }
           }
-        }
+        }, 3500);
       };
 
       recognitionRef.current.onerror = (event: any) => {
@@ -1534,7 +1553,7 @@ export default function App() {
                               onChange={(e) => {
                                 setWbsDescriptions(prev => ({ ...prev, [wbs]: e.target.value }));
                               }}
-                              className="w-full bg-white border border-black/10 rounded-xl px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none min-h-[80px] overflow-hidden"
+                              className="w-full bg-white border border-black/10 rounded-xl px-3 py-2 pr-10 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none min-h-[80px] overflow-hidden"
                             />
                             <div className="absolute top-2 right-2">
                               <DictationButton 
@@ -1672,7 +1691,7 @@ export default function App() {
                         onChange={(e) => {
                           setCustomPrompt(e.target.value);
                         }}
-                        className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none min-h-[80px] overflow-hidden"
+                        className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none min-h-[80px] overflow-hidden"
                       />
                       <div className="absolute top-2 right-2">
                         <DictationButton 
