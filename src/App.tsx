@@ -487,6 +487,7 @@ export default function App() {
   const recognitionRef = useRef<any>(null);
   const lastProcessedResultIndex = useRef(0);
   const lastTranscriptRef = useRef("");
+  const transcriptBufferRef = useRef("");
 
   const getDictationLangTag = (lang: string) => {
     switch(lang) {
@@ -627,7 +628,6 @@ export default function App() {
       recognitionRef.current.interimResults = true;
 
       let silenceTimer: any = null;
-      let transcriptBuffer = "";
 
       recognitionRef.current.onresult = (event: any) => {
         const currentField = activeFieldRef.current;
@@ -639,16 +639,17 @@ export default function App() {
         // Append new results to buffer
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const result = event.results[i];
-          if (result.isFinal) {
-            transcriptBuffer += result[0].transcript.trim() + " ";
+          if (result.isFinal && i >= lastProcessedResultIndex.current) {
+            lastProcessedResultIndex.current = i + 1;
+            transcriptBufferRef.current += result[0].transcript.trim() + " ";
           }
         }
 
         // Set timer for 5 seconds
         silenceTimer = setTimeout(() => {
-          if (transcriptBuffer.trim()) {
-            const transcript = transcriptBuffer.trim();
-            transcriptBuffer = "";
+          if (transcriptBufferRef.current.trim()) {
+            const transcript = transcriptBufferRef.current.trim();
+            transcriptBufferRef.current = "";
             
             // Play beep
             try {
@@ -681,7 +682,7 @@ export default function App() {
               });
             }
           }
-        }, 3500);
+        }, 5000);
       };
 
       recognitionRef.current.onerror = (event: any) => {
@@ -691,6 +692,7 @@ export default function App() {
 
       recognitionRef.current.onend = () => {
         lastProcessedResultIndex.current = 0;
+        transcriptBufferRef.current = "";
         // Only set to null if we aren't starting a new field
         setActiveDictationField(current => {
           if (recognitionRef.current && current) {
