@@ -691,9 +691,12 @@ export default function App() {
     };
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Auto-resize all textareas when content changes
   useEffect(() => {
-    const textareas = document.querySelectorAll('textarea');
+    if (!containerRef.current) return;
+    const textareas = containerRef.current.querySelectorAll('textarea');
     textareas.forEach(textarea => {
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
@@ -1339,7 +1342,7 @@ export default function App() {
   };
 
   return (
-    <div>
+    <div ref={containerRef}>
       <ErrorBoundary>
         <div className="min-h-screen bg-[#F5F5F5] text-[#1A1A1A] font-sans selection:bg-emerald-100">
           <ConfirmModal 
@@ -2208,12 +2211,14 @@ export default function App() {
       <AnimatePresence>
         {isModalOpen && (
           <motion.div 
+            key="quote-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-center justify-center p-0 md:p-6 print:hidden"
           >
             <motion.div 
+              key="quote-modal-content"
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
@@ -2377,6 +2382,7 @@ export default function App() {
         {isCompanyModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             <motion.div 
+              key="company-modal-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2384,6 +2390,7 @@ export default function App() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="company-modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
